@@ -1,0 +1,1 @@
+import{adminApi}from"../admin-api";import type{AppSettingsDocument}from"@/types/collections";export const getAdminSettings=()=>adminApi<AppSettingsDocument|null>("/api/admin/settings");export const saveAdminSettings=(data:AppSettingsDocument)=>adminApi<{message:string}>("/api/admin/settings",{method:"PUT",body:JSON.stringify(data)});

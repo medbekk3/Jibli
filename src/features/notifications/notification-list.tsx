@@ -1,0 +1,14 @@
+"use client";
+
+import { Bell, LoaderCircle, RefreshCw } from "lucide-react";
+import Link from "next/link";
+import { EmptyState } from "@/components/ui/empty-state";
+import { useNotifications } from "./notification-context";
+import { formatDate, formatTime } from "@/lib/formatters/numbers";
+
+export function NotificationList() {
+  const { notifications, unreadCount, loading, error, refresh, markRead, markAllRead } = useNotifications();
+  return <div><div className="mb-5 flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-gray-500">{unreadCount ? `${unreadCount} إشعارات غير مقروءة` : "لا توجد إشعارات غير مقروءة"}</p><div className="flex gap-2"><button type="button" onClick={() => void refresh()} disabled={loading} className="flex h-10 items-center gap-2 rounded-xl bg-gray-100 px-4 text-xs font-black disabled:opacity-50"><RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} />تحديث</button><button type="button" onClick={() => void markAllRead()} disabled={!unreadCount} className="h-10 rounded-xl bg-primary px-4 text-xs font-black text-white disabled:opacity-50">تحديد الكل كمقروء</button></div></div>{loading && !notifications.length ? <div className="flex justify-center py-20"><LoaderCircle className="size-7 animate-spin text-primary" /></div> : error ? <div className="rounded-2xl bg-red-50 p-5 text-center text-sm font-bold text-red-600"><p>{error}</p><button onClick={() => void refresh()} className="mt-4 rounded-xl bg-red-600 px-5 py-2 text-white">إعادة المحاولة</button></div> : notifications.length === 0 ? <EmptyState icon={Bell} title="لا توجد إشعارات حالياً." description="ستظهر الإشعارات الجديدة هنا." /> : <div className="space-y-3">{notifications.map((item) => <article key={item.id} className={`rounded-2xl border p-5 shadow-sm ${item.isRead ? "bg-white" : "border-orange-200 bg-orange-50/60"}`}><button type="button" onClick={() => void markRead(item.id)} className="w-full text-right"><div className="flex items-start gap-3">{!item.isRead && <span className="mt-2 size-2 shrink-0 rounded-full bg-primary" />}<div className="min-w-0 flex-1"><h2 className="font-black">{item.title}</h2><p className="mt-2 text-sm leading-7 text-gray-600">{item.body}</p><div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-400"><span>{item.createdAt ? `${formatDate(item.createdAt)}، ${formatTime(item.createdAt)}` : "الآن"}</span><span>{typeLabel(item.type)}</span></div></div></div></button>{item.link && <Link href={item.link} onClick={() => void markRead(item.id)} className="mt-3 inline-block text-xs font-black text-primary">عرض التفاصيل</Link>}</article>)}</div>}</div>;
+}
+
+function typeLabel(type: string) { return type === "offer" ? "عرض" : type === "order" ? "طلب" : type === "system" ? "النظام" : "عام"; }

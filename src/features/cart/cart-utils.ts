@@ -1,0 +1,9 @@
+import type { CartItem, NewCartItem } from "./cart-types";
+
+export const CART_STORAGE_KEY = "jibli_cart_v2";
+export const clampQuantity = (quantity: number) => Math.max(1, Math.min(99, Math.trunc(Number.isFinite(quantity) ? quantity : 1)));
+export const calculateAddonsTotal = (item: Pick<NewCartItem, "selectedAddons">) => item.selectedAddons.reduce((total, addon) => total + Math.max(0, addon.price), 0);
+export const calculateItemTotal = (item: Pick<NewCartItem, "unitPrice" | "quantity" | "selectedAddons">) => (Math.max(0, item.unitPrice) + calculateAddonsTotal(item)) * clampQuantity(item.quantity);
+export const itemSignature = (item: Pick<NewCartItem, "productId" | "selectedAddons" | "note">) => `${item.productId}:${item.selectedAddons.map((addon) => addon.addonId).sort().join(",")}:${item.note.trim()}`;
+export function normalizeCartItem(item: NewCartItem, cartItemId = crypto.randomUUID()): CartItem { const quantity = clampQuantity(item.quantity); const selectedAddons = item.selectedAddons.map((addon) => ({ addonId: addon.addonId, name: addon.name, price: Math.max(0, Number(addon.price) || 0) })); const normalized = { ...item, cartItemId, quantity, selectedAddons, note: item.note.trim(), unitPrice: Math.max(0, Number(item.unitPrice) || 0) }; return { ...normalized, addonsTotal: calculateAddonsTotal(normalized), itemTotal: calculateItemTotal(normalized) }; }
+export function isStoredCartItem(value: unknown): value is CartItem { if (!value || typeof value !== "object") return false; const item = value as Partial<CartItem>; return typeof item.cartItemId === "string" && typeof item.productId === "string" && typeof item.restaurantId === "string" && typeof item.restaurantName === "string" && typeof item.productName === "string" && typeof item.imageUrl === "string" && typeof item.unitPrice === "number" && typeof item.quantity === "number" && item.quantity >= 1 && Array.isArray(item.selectedAddons) && typeof item.note === "string"; }

@@ -1,0 +1,2 @@
+import { ProductView } from "@/features/public-data/product-view";
+export default async function ProductPage({ params }: { params: Promise<{ id: string }> }) { const { id } = await params; return <ProductView id={id} />; }

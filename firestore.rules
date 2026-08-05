@@ -1,0 +1,134 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active';
+    }
+
+    function isActiveRestaurantAccount() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'restaurant'
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'active';
+    }
+
+    function ownsRestaurant(restaurantId) {
+      return isActiveRestaurantAccount()
+        && exists(/databases/$(database)/documents/restaurants/$(restaurantId))
+        && get(/databases/$(database)/documents/restaurants/$(restaurantId)).data.ownerId == request.auth.uid;
+    }
+
+    function isPublicRestaurant(restaurantId) {
+      return exists(/databases/$(database)/documents/restaurants/$(restaurantId))
+        && get(/databases/$(database)/documents/restaurants/$(restaurantId)).data.isActive == true;
+    }
+
+    function hasValidUserFields() {
+      return request.resource.data.keys().hasAll([
+          'uid', 'firstName', 'lastName', 'fullName', 'phone', 'email',
+          'role', 'status', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.keys().hasOnly([
+          'uid', 'firstName', 'lastName', 'fullName', 'phone', 'email',
+          'role', 'status', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.uid is string
+        && request.resource.data.firstName is string
+        && request.resource.data.lastName is string
+        && request.resource.data.fullName is string
+        && request.resource.data.phone is string
+        && request.resource.data.email is string
+        && request.resource.data.role in ['customer', 'restaurant', 'admin']
+        && request.resource.data.status in ['active', 'pending', 'suspended'];
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+
+      allow create: if hasValidUserFields() && (
+        isAdmin() || (
+          isOwner(userId)
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.role == 'customer'
+          && request.resource.data.status == 'active'
+        )
+      );
+
+      allow update: if hasValidUserFields() && (
+        isOwner(userId)
+          && request.resource.data.uid == resource.data.uid
+          && request.resource.data.email == resource.data.email
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['firstName', 'lastName', 'fullName', 'phone', 'updatedAt'])
+      );
+
+      allow delete: if false;
+    }
+
+    match /restaurants/{restaurantId} {
+      allow read: if isAdmin()
+        || resource.data.isActive == true
+        || (isActiveRestaurantAccount() && resource.data.ownerId == request.auth.uid);
+      allow create, update, delete: if false;
+    }
+
+    match /categories/{categoryId} {
+      allow read: if isAdmin() || resource.data.isActive == true;
+      allow create, update, delete: if false;
+    }
+
+    match /products/{productId} {
+      allow read: if isAdmin()
+        || (resource.data.isAvailable == true && isPublicRestaurant(resource.data.restaurantId))
+        || ownsRestaurant(resource.data.restaurantId);
+      allow create, update, delete: if false;
+    }
+
+    match /offers/{offerId} {
+      allow read: if isAdmin() || resource.data.isActive == true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /orders/{orderId} {
+      allow read: if isAdmin()
+        || (isSignedIn() && resource.data.customerId == request.auth.uid)
+        || ownsRestaurant(resource.data.restaurantId);
+      allow write: if false;
+    }
+
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /pushTokens/{tokenId} {
+      allow read, write: if false;
+    }
+
+    match /notifications/{notificationId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /complaints/{complaintId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.customerId == request.auth.uid);
+      allow create, update, delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

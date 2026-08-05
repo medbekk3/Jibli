@@ -1,0 +1,7 @@
+export type ComplaintStatus = "open" | "in_review" | "resolved" | "closed" | "rejected";
+export type ComplaintPriority = "normal" | "high" | "urgent";
+export type ComplaintCategory = "delayed_order" | "missing_order" | "wrong_order" | "restaurant_issue" | "payment_issue" | "technical_issue" | "suggestion" | "other";
+export type ComplaintDocument = { id: string; customerId: string; customerName: string; customerPhone: string; customerEmail: string; subject: string; category: ComplaintCategory; description: string; orderId: string | null; orderNumber: string | null; restaurantId: string | null; restaurantName: string | null; attachmentUrl: string; attachmentPublicId: string; status: ComplaintStatus; priority: ComplaintPriority; adminReply: string; repliedBy: string | null; repliedAt: string | null; createdAt: string | null; updatedAt: string | null };
+export const complaintStatusLabels: Record<ComplaintStatus,string>={open:"مفتوحة",in_review:"قيد المراجعة",resolved:"تم الحل",closed:"مغلقة",rejected:"مرفوضة"};
+export const complaintPriorityLabels: Record<ComplaintPriority,string>={normal:"عادية",high:"مرتفعة",urgent:"عاجلة"};
+export const complaintCategoryLabels: Record<ComplaintCategory,string>={delayed_order:"تأخر الطلب",missing_order:"طلب ناقص",wrong_order:"طلب خاطئ",restaurant_issue:"مشكلة مع المطعم",payment_issue:"مشكلة في الدفع",technical_issue:"مشكلة تقنية",suggestion:"اقتراح",other:"أخرى"};

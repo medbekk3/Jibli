@@ -1,0 +1,8 @@
+{
+  "projects": {
+    "production": "jibli-c1b46",
+    "firebase projects:list": "jibli-c1b46"
+  },
+  "targets": {},
+  "etags": {}
+}
