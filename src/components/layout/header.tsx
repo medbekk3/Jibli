@@ -24,7 +24,7 @@ export function Header({ title, backHref }: { title?: string; backHref?: string 
             </Link>
           )}
           <Link href="/" aria-label={"\u062c\u064a\u0628\u0644\u064a - \u0627\u0644\u0635\u0641\u062d\u0629 \u0627\u0644\u0631\u0626\u064a\u0633\u064a\u0629"} className="flex min-w-0 items-center gap-2.5 text-right sm:gap-3" dir="rtl">
-            <Image src="/images/icon.png" alt="Jibli" width={1024} height={1024} priority className="size-11 shrink-0 rounded-2xl object-cover shadow-[0_7px_20px_rgba(237,91,24,.2)] sm:size-12" sizes="48px" />
+            <Image src="/images/icon-192.png" alt="Jibli" width={192} height={192} priority className="size-11 shrink-0 rounded-2xl object-cover shadow-[0_7px_20px_rgba(237,91,24,.2)] sm:size-12" sizes="48px" />
             <span className="min-w-0 leading-none">
               <span className="block text-xl font-black tracking-[-0.04em] text-ink sm:text-[1.35rem]">&#x062C;&#x064A;&#x0628;&#x0644;&#x064A;</span>
               <span className="mt-1.5 line-clamp-2 max-w-40 text-right text-[9px] font-medium leading-[1.45] text-[#6B7280] min-[390px]:max-w-52 sm:max-w-none sm:whitespace-nowrap sm:text-[10px]">

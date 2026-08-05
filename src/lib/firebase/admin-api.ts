@@ -27,7 +27,7 @@ export async function adminApi<T>(url: string, init: RequestInit = {}): Promise<
   if (!response.ok || !body || body.success !== true) {
     const failure = body && body.success === false ? body.error : null;
     if (response.status === 401 && typeof window !== "undefined") {
-      window.location.assign("/login?redirect=/admin");
+      window.location.replace("/login?redirect=/admin");
     }
     throw new AdminApiError(response.status, failure?.code ?? "ADMIN_OPERATION_FAILED", failure?.message ?? "تعذر تنفيذ العملية الإدارية.");
   }

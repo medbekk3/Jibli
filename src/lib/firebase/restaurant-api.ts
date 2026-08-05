@@ -17,7 +17,7 @@ export async function restaurantApi<T>(url: string, init: RequestInit = {}) {
   const body = await response.json().catch(() => null) as Success<T> | Failure | null;
   if (!response.ok || !body || body.success !== true) {
     const failure = body && body.success === false ? body.error : null;
-    if (response.status === 401 && typeof window !== "undefined") window.location.assign(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+    if (response.status === 401 && typeof window !== "undefined") window.location.replace(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
     const fallback = response.status === 403 ? "حساب المطعم غير مخول أو موقوف." : response.status === 404 ? "المطعم أو الأكلة غير موجودة." : "تعذر تنفيذ العملية على الخادم.";
     throw new RestaurantApiError(response.status, failure?.code ?? "RESTAURANT_OPERATION_FAILED", failure?.message ?? fallback);
   }

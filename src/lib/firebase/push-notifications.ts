@@ -26,7 +26,7 @@ export async function sendPushToTokens(records: TokenRecord[], payload: PushPayl
   for (let start = 0; start < records.length; start += 500) {
     const batch = records.slice(start, start + 500);
     try {
-      const response = await getMessaging(getAdminApp()).sendEachForMulticast({ tokens: batch.map((item) => item.token), notification: payload.notification, data: payload.data, webpush: { headers: { Urgency: "high" }, fcmOptions: { link: payload.data.url }, notification: { icon: "/images/icon.png", badge: "/images/icon.png", tag: `${payload.data.type}:${payload.data.orderId}`, renotify: true, data: { url: payload.data.url } } } });
+      const response = await getMessaging(getAdminApp()).sendEachForMulticast({ tokens: batch.map((item) => item.token), notification: payload.notification, data: payload.data, webpush: { headers: { Urgency: "high" }, fcmOptions: { link: payload.data.url }, notification: { icon: "/images/icon-192.png", badge: "/images/icon-192.png", tag: `${payload.data.type}:${payload.data.orderId}`, renotify: true, data: { url: payload.data.url } } } });
       successCount += response.successCount; failureCount += response.failureCount;
       response.responses.forEach((item, index) => { if (!item.success) { const code = item.error?.code ?? "messaging/unknown"; errorCodes.add(code); if (invalidCodes.has(code)) invalidIds.push(batch[index].id); } });
     } catch (error) { failureCount += batch.length; errorCodes.add(error instanceof Error ? (error as Error & { code?: string }).code ?? "messaging/send-failed" : "messaging/send-failed"); }

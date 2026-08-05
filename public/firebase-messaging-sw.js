@@ -16,8 +16,8 @@ self.addEventListener("notificationclick", (event) => {
   }));
 });
 
-importScripts("https://www.gstatic.com/firebasejs/12.7.0/firebase-app-compat.js");
-importScripts("https://www.gstatic.com/firebasejs/12.7.0/firebase-messaging-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/12.17.0/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/12.17.0/firebase-messaging-compat.js");
 
 const params = new URL(self.location.href).searchParams;
 const firebaseConfig = Object.fromEntries(["apiKey", "authDomain", "projectId", "storageBucket", "messagingSenderId", "appId"].map((key) => [key, params.get(key)]).filter((entry) => entry[1]));
