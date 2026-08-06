@@ -1,9 +1,11 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { NextRequest } from "next/server";
-import { getAdminDb } from "@/lib/firebase/admin";
+import { adminDb } from "@/lib/firebase/admin";
 import { publicRestaurant } from "@/lib/firebase/public-mappers";
 import { logPublicFailure, publicFailure, publicSuccess } from "@/lib/firebase/public-response";
 
-export const dynamic = "force-dynamic";
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id: rawId } = await params;
@@ -11,7 +13,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
   if (!id) return publicFailure("INVALID_RESTAURANT_ID", "بيانات المطعم غير صحيحة.", 400);
 
   try {
-    const document = await getAdminDb().collection("restaurants").doc(id).get();
+    const document = await adminDb.collection("restaurants").doc(id).get();
     if (!document.exists) return publicFailure("RESTAURANT_NOT_FOUND", "المطعم غير موجود.", 404);
     const data = document.data() ?? {};
     if (data.isActive !== true) return publicFailure("RESTAURANT_INACTIVE", "المطعم غير متاح حالياً.", 409);

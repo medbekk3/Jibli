@@ -1,5 +1,8 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { NextRequest } from "next/server";
-import { getAdminDb } from "@/lib/firebase/admin";
+import { adminDb } from "@/lib/firebase/admin";
 import { publicFailure, publicSuccess } from "@/lib/firebase/public-response";
 
 type RequestItem = {
@@ -55,7 +58,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const database = getAdminDb();
+    const database = adminDb;
     const restaurantDocument = await database.collection("restaurants").doc(restaurantId).get();
     if (!restaurantDocument.exists) return publicFailure("RESTAURANT_NOT_FOUND", "المطعم غير موجود.", 404);
 

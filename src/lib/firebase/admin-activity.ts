@@ -1,4 +1,4 @@
-import { FieldValue, type Firestore, type WriteBatch } from "firebase-admin/firestore";
+import { FieldValue, type Firestore, type WriteBatch } from "@/lib/firebase/admin";
 
 export function adminActivityData(adminId: string, action: string, entityType: string, entityId: string, description: string) {
   return { adminId, action, entityType, entityId, description, createdAt: FieldValue.serverTimestamp() };

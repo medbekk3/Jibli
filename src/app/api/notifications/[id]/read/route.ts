@@ -1,11 +1,14 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminDb } from "@/lib/firebase/admin";
+import { adminDb } from "@/lib/firebase/admin";
 import { markNotificationRead, notificationAllowed, NotificationApiError, requireNotificationUser } from "@/lib/notifications/server";
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await requireNotificationUser(request); const { id } = await params;
-    const snapshot = await getAdminDb().collection("notifications").doc(id).get();
+    const snapshot = await adminDb.collection("notifications").doc(id).get();
     if (!snapshot.exists) throw new NotificationApiError(404, "NOTIFICATION_NOT_FOUND", "الإشعار غير موجود.");
     if (!notificationAllowed(snapshot.data()!, user.uid, user.role)) throw new NotificationApiError(403, "NOTIFICATION_FORBIDDEN", "ليس لديك صلاحية قراءة هذا الإشعار.");
     await markNotificationRead(id, user.uid);

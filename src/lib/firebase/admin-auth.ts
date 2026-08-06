@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getAdminAuth, getAdminDb } from "./admin";
+import { adminAuth, adminDb } from "./admin";
 
 function logAdminAuthorizationFailure(stage: string, error: unknown) {
   const details = error instanceof Error
@@ -21,14 +21,14 @@ export async function requireActiveAdmin(request: NextRequest) {
 
   let token;
   try {
-    token = await getAdminAuth().verifyIdToken(header.slice(7));
+    token = await adminAuth.verifyIdToken(header.slice(7));
   } catch (error) {
     logAdminAuthorizationFailure("التحقق من رمز الدخول", error);
     return { error: NextResponse.json({ message: "جلسة الإدارة غير صالحة." }, { status: 401 }) };
   }
 
   try {
-    const snapshot = await getAdminDb().collection("users").doc(token.uid).get();
+    const snapshot = await adminDb.collection("users").doc(token.uid).get();
     const profile = snapshot.data();
     if (!snapshot.exists || profile?.role !== "admin" || profile?.status !== "active") {
       logAdminAuthorizationFailure("التحقق من الدور والحالة", new Error("الحساب ليس مديراً نشطاً."));

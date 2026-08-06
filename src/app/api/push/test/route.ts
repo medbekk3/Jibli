@@ -1,3 +1,6 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { PushAuthError, requirePushUser } from "@/lib/firebase/push-auth";
 import { logPushResult, sendPushToUser } from "@/lib/firebase/push-notifications";

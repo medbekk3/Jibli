@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 
-import { getAdminAuth, getAdminDb } from "./admin";
+import { adminAuth, adminDb } from "./admin";
 
 export class AdminSessionError extends Error {
   constructor(public status: 401 | 403 | 500, public code: "ADMIN_SESSION_REQUIRED" | "ADMIN_FORBIDDEN" | "FIREBASE_ADMIN_NOT_CONFIGURED", message: string, options?: ErrorOptions) {
@@ -14,7 +14,7 @@ export async function requireActiveAdminSession() {
 
   let decoded;
   try {
-    decoded = await getAdminAuth().verifySessionCookie(session, true);
+    decoded = await adminAuth.verifySessionCookie(session, true);
   } catch (error) {
     const code = (error as { code?: string }).code;
     if (typeof code === "string" && (code.startsWith("app/") || code.startsWith("credential/"))) {
@@ -25,7 +25,7 @@ export async function requireActiveAdminSession() {
 
   let snapshot;
   try {
-    snapshot = await getAdminDb().collection("users").doc(decoded.uid).get();
+    snapshot = await adminDb.collection("users").doc(decoded.uid).get();
   } catch (error) {
     throw new AdminSessionError(500, "FIREBASE_ADMIN_NOT_CONFIGURED", "تعذر الاتصال بقاعدة بيانات الإدارة.", { cause: error });
   }

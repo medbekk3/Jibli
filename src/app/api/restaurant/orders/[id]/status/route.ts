@@ -1,6 +1,9 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
-import { FieldValue } from "firebase-admin/firestore";
-import { getAdminDb } from "@/lib/firebase/admin";
+import { FieldValue } from "@/lib/firebase/admin";
+import { adminDb } from "@/lib/firebase/admin";
 import { isRestaurantSessionError, requireActiveRestaurantSession } from "@/lib/firebase/restaurant-session";
 import { isOrderStatus, isValidOrderTransition } from "@/lib/orders/status-transitions";
 import type { OrderStatusCode } from "@/types/collections";
@@ -39,7 +42,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   if (!isOrderStatus(nextStatus)) return failure("INVALID_ORDER_TRANSITION");
 
   try {
-    const database = getAdminDb();
+    const database = adminDb;
     const orderReference = database.collection("orders").doc(id);
     const historyReference = orderReference.collection("statusHistory").doc();
     const notificationReference = database.collection("notifications").doc(`order_status_${id}_${nextStatus}`);

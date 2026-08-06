@@ -1,22 +1,25 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
+import { adminAuth, adminDb } from "@/lib/firebase/admin";
 import { serializeDocument, serializeFirestoreData } from "@/lib/firebase/serialize-firestore";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const header = request.headers.get("authorization");
   if (!header?.startsWith("Bearer ")) return failure("CUSTOMER_UNAUTHORIZED", "يجب تسجيل الدخول لعرض هذا الطلب.", 401);
   try {
-    const decoded = await getAdminAuth().verifyIdToken(header.slice(7));
+    const decoded = await adminAuth.verifyIdToken(header.slice(7));
     const [profileSnapshot, orderSnapshot] = await Promise.all([
-      getAdminDb().collection("users").doc(decoded.uid).get(),
-      getAdminDb().collection("orders").doc((await params).id).get(),
+      adminDb.collection("users").doc(decoded.uid).get(),
+      adminDb.collection("orders").doc((await params).id).get(),
     ]);
     if (!orderSnapshot.exists) return failure("ORDER_NOT_FOUND", "الطلب غير موجود.", 404);
     const profile = profileSnapshot.data() ?? {};
     const order = orderSnapshot.data() ?? {};
     let allowed = profile.status === "active" && (profile.role === "admin" || (profile.role === "customer" && order.customerId === decoded.uid));
     if (!allowed && profile.status === "active" && profile.role === "restaurant") {
-      const restaurant = await getAdminDb().collection("restaurants").where("ownerId", "==", decoded.uid).limit(1).get();
+      const restaurant = await adminDb.collection("restaurants").where("ownerId", "==", decoded.uid).limit(1).get();
       allowed = restaurant.docs[0]?.id === order.restaurantId;
     }
     if (!allowed) return failure("ORDER_FORBIDDEN", "لا تملك صلاحية عرض هذا الطلب.", 403);

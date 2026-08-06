@@ -1,5 +1,8 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminDb } from "@/lib/firebase/admin";
+import { adminDb } from "@/lib/firebase/admin";
 import { isRestaurantSessionError, requireActiveRestaurantSession } from "@/lib/firebase/restaurant-session";
 import { serializeDocument, serializeFirestoreData } from "@/lib/firebase/serialize-firestore";
 
@@ -7,7 +10,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
   try {
     const session = await requireActiveRestaurantSession();
     const { id } = await params;
-    const order = await getAdminDb().collection("orders").doc(id).get();
+    const order = await adminDb.collection("orders").doc(id).get();
     if (!order.exists) return failure("ORDER_NOT_FOUND", "الطلب غير موجود.", 404);
     if (order.data()?.restaurantId !== session.restaurant.id) return failure("ORDER_FORBIDDEN", "لا تملك صلاحية إدارة هذا الطلب.", 403);
     const history = await order.ref.collection("statusHistory").orderBy("createdAt", "asc").get();

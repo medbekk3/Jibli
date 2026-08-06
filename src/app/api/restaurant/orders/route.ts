@@ -1,4 +1,7 @@
-import { getAdminDb } from "@/lib/firebase/admin";
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+import { adminDb } from "@/lib/firebase/admin";
 import { isRestaurantSessionError, requireActiveRestaurantSession } from "@/lib/firebase/restaurant-session";
 import { serializeDocument } from "@/lib/firebase/serialize-firestore";
 import { NextResponse } from "next/server";
@@ -6,7 +9,7 @@ import { NextResponse } from "next/server";
 export async function GET() {
   try {
     const session = await requireActiveRestaurantSession();
-    const snapshot = await getAdminDb().collection("orders").where("restaurantId", "==", session.restaurant.id).limit(100).get();
+    const snapshot = await adminDb.collection("orders").where("restaurantId", "==", session.restaurant.id).limit(100).get();
     const orders = snapshot.docs.sort((a, b) => timestampMillis(b.data().createdAt) - timestampMillis(a.data().createdAt)).map((doc) => serializeDocument(doc.id, doc.data()));
     return NextResponse.json({ success: true, data: { orders } });
   } catch (error) {

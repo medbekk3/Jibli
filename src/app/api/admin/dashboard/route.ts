@@ -1,5 +1,8 @@
-import { Timestamp } from "firebase-admin/firestore";
-import { getAdminDb } from "@/lib/firebase/admin";
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+import { Timestamp } from "@/lib/firebase/admin";
+import { adminDb } from "@/lib/firebase/admin";
 import { adminFailure, adminSuccess, logAdminApiFailure } from "@/lib/firebase/admin-response";
 import { isAdminSessionError, requireActiveAdminSession } from "@/lib/firebase/admin-session";
 import { serializeDocument } from "@/lib/firebase/serialize-firestore";
@@ -10,7 +13,7 @@ const amount = (value: unknown) => Number.isFinite(Number(value)) ? Number(value
 export async function GET() {
   try {
     await requireActiveAdminSession();
-    const db = getAdminDb();
+    const db = adminDb;
     const [restaurants, users, categories, products, offers, orders, activities] = await Promise.all([
       db.collection("restaurants").get(), db.collection("users").get(), db.collection("categories").get(),
       db.collection("products").get(), db.collection("offers").get(), db.collection("orders").orderBy("createdAt", "desc").limit(5000).get(),

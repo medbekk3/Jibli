@@ -1,5 +1,8 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { NextRequest } from "next/server";
-import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
+import { adminAuth, adminDb } from "@/lib/firebase/admin";
 import { adminFailure, adminSuccess, logAdminApiFailure } from "@/lib/firebase/admin-response";
 import { isAdminSessionError, requireActiveAdminSession } from "@/lib/firebase/admin-session";
 import { serializeDocument } from "@/lib/firebase/serialize-firestore";
@@ -7,8 +10,8 @@ import { serializeDocument } from "@/lib/firebase/serialize-firestore";
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await requireActiveAdminSession(); const { id } = await params;
-    const snapshot = await getAdminDb().collection("users").doc(id).get();
-    const auth = await getAdminAuth().getUser(id).catch(() => null);
+    const snapshot = await adminDb.collection("users").doc(id).get();
+    const auth = await adminAuth.getUser(id).catch(() => null);
     if (!snapshot.exists && !auth) return adminFailure("INVALID_FORM_DATA", "المستخدم غير موجود.", 404);
     return adminSuccess(serializeDocument(id, { uid: id, ...(snapshot.data() ?? {}), firestoreDocumentExists: snapshot.exists, authAccountExists: Boolean(auth), authDisabled: auth?.disabled ?? null, lastLoginAt: snapshot.data()?.lastLoginAt ?? auth?.metadata.lastSignInTime ?? null }));
   } catch (error) {

@@ -1,7 +1,10 @@
-import { FieldValue } from "firebase-admin/firestore";
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+import { FieldValue } from "@/lib/firebase/admin";
 import { NextRequest } from "next/server";
 
-import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
+import { adminAuth, adminDb } from "@/lib/firebase/admin";
 import { adminFailure, adminSuccess, logAdminApiFailure } from "@/lib/firebase/admin-response";
 import { addAdminActivity } from "@/lib/firebase/admin-activity";
 import { isAdminSessionError, requireActiveAdminSession } from "@/lib/firebase/admin-session";
@@ -14,7 +17,7 @@ const bool = (value: unknown, fallback = false) => typeof value === "boolean" ? 
 export async function GET() {
   try {
     await requireActiveAdminSession();
-    const db = getAdminDb();
+    const db = adminDb;
     const snapshot = await db.collection("restaurants").get();
     const rows = await Promise.all(snapshot.docs.map(async (document) => {
       const value = document.data();
@@ -57,10 +60,10 @@ export async function POST(request: NextRequest) {
       return adminFailure("INVALID_FORM_DATA", "بيانات الحساب أو المطعم غير مكتملة.", 400);
     }
     stage = "إنشاء حساب Authentication";
-    const authUser = await getAdminAuth().createUser({ email, password, displayName: `${firstName} ${lastName}` });
+    const authUser = await adminAuth.createUser({ email, password, displayName: `${firstName} ${lastName}` });
     createdUid = authUser.uid;
     stage = "إنشاء وثيقتي المستخدم والمطعم";
-    const db = getAdminDb(); const restaurantRef = db.collection("restaurants").doc(); const batch = db.batch();
+    const db = adminDb; const restaurantRef = db.collection("restaurants").doc(); const batch = db.batch();
     const now = FieldValue.serverTimestamp(); const isActive = bool(restaurant.isActive, true);
     batch.set(db.collection("users").doc(createdUid), {
       uid: createdUid, firstName, lastName, fullName: `${firstName} ${lastName}`, email, phone,
@@ -80,7 +83,7 @@ export async function POST(request: NextRequest) {
     return adminSuccess({ restaurantId: restaurantRef.id, ownerId: createdUid, email }, 201);
   } catch (error) {
     logAdminApiFailure("POST /api/admin/restaurants", stage, error);
-    if (createdUid) await getAdminAuth().deleteUser(createdUid).catch((rollbackError) => logAdminApiFailure("POST /api/admin/restaurants", "التراجع عن حساب Authentication", rollbackError));
+    if (createdUid) await adminAuth.deleteUser(createdUid).catch((rollbackError) => logAdminApiFailure("POST /api/admin/restaurants", "التراجع عن حساب Authentication", rollbackError));
     if (isAdminSessionError(error)) return adminFailure(error.code, error.message, error.status);
     const code = (error as { code?: string }).code;
     if (code === "auth/email-already-exists") return adminFailure("INVALID_FORM_DATA", "البريد الإلكتروني مستعمل من قبل.", 400);

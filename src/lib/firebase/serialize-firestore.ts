@@ -1,4 +1,4 @@
-import { DocumentReference, Timestamp } from "firebase-admin/firestore";
+import { DocumentReference, Timestamp } from "@/lib/firebase/admin";
 
 export function serializeFirestoreData(value: unknown): unknown {
   if (value === undefined) return null;

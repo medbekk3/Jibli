@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 
-import { getAdminAuth, getAdminDb } from "./admin";
+import { adminAuth, adminDb } from "./admin";
 
 export const RESTAURANT_SESSION_COOKIE = "jibli_restaurant_session";
 
@@ -18,10 +18,10 @@ export async function getRestaurantSession() {
   if (!session) throw new RestaurantSessionError(401, "RESTAURANT_SESSION_REQUIRED", "انتهت جلسة المطعم، سجّل الدخول مجدداً.");
 
   let decoded;
-  try { decoded = await getAdminAuth().verifySessionCookie(session, true); }
+  try { decoded = await adminAuth.verifySessionCookie(session, true); }
   catch (error) { throw new RestaurantSessionError(401, "RESTAURANT_SESSION_REQUIRED", "انتهت جلسة المطعم، سجّل الدخول مجدداً.", { cause: error }); }
 
-  const database = getAdminDb();
+  const database = adminDb;
   let profileSnapshot;
   try { profileSnapshot = await database.collection("users").doc(decoded.uid).get(); }
   catch (error) { throw new RestaurantSessionError(500, "FIREBASE_ADMIN_NOT_CONFIGURED", "تعذر الاتصال ببيانات حساب المطعم.", { cause: error }); }

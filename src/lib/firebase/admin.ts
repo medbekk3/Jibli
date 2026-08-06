@@ -1,54 +1,49 @@
-import { cert, getApps, initializeApp, type App } from "firebase-admin/app";
+import {
+  cert,
+  getApp,
+  getApps,
+  initializeApp,
+  type App,
+} from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
-import { getFirestore } from "firebase-admin/firestore";
+import {
+  DocumentReference,
+  FieldValue,
+  Timestamp,
+  getFirestore,
+  type DocumentData,
+  type Firestore,
+  type QueryDocumentSnapshot,
+  type WriteBatch,
+} from "firebase-admin/firestore";
+import { getMessaging } from "firebase-admin/messaging";
 
-type AdminEnvironment = {
-  projectId: string;
-  clientEmail: string;
-  privateKey: string;
-};
+function requiredEnvironment(name: "FIREBASE_ADMIN_PROJECT_ID" | "FIREBASE_ADMIN_CLIENT_EMAIL") {
+  const value = process.env[name]?.trim();
+  if (!value) throw new Error(`Missing ${name}`);
+  return value;
+}
 
-let adminApp: App | undefined;
+function normalizePrivateKey(value: string | undefined): string {
+  if (!value) throw new Error("Missing FIREBASE_ADMIN_PRIVATE_KEY");
+  let normalized = value.trim();
+  if ((normalized.startsWith('"') && normalized.endsWith('"')) || (normalized.startsWith("'") && normalized.endsWith("'"))) normalized = normalized.slice(1, -1);
+  return normalized.replace(/\\n/g, "\n");
+}
 
-function readAdminEnvironment(): AdminEnvironment {
-  const projectId = process.env.FIREBASE_ADMIN_PROJECT_ID?.trim();
-  const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL?.trim();
-  const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY?.replace(/\\n/g, "\n");
+function createAdminApp(): App {
+  if (getApps().length > 0) return getApp();
+  const projectId = requiredEnvironment("FIREBASE_ADMIN_PROJECT_ID");
+  const clientEmail = requiredEnvironment("FIREBASE_ADMIN_CLIENT_EMAIL");
+  const privateKey = normalizePrivateKey(process.env.FIREBASE_ADMIN_PRIVATE_KEY);
   const publicProjectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID?.trim();
-
-  const missing = [
-    !projectId && "FIREBASE_ADMIN_PROJECT_ID",
-    !clientEmail && "FIREBASE_ADMIN_CLIENT_EMAIL",
-    !privateKey && "FIREBASE_ADMIN_PRIVATE_KEY",
-  ].filter(Boolean);
-
-  if (missing.length) {
-    throw new Error(`إعدادات Firebase Admin ناقصة: ${missing.join("، ")}`);
-  }
-
-  if (publicProjectId && projectId !== publicProjectId) {
-    throw new Error("معرّف مشروع Firebase Admin لا يطابق معرّف مشروع الواجهة.");
-  }
-
-  return { projectId, clientEmail, privateKey } as AdminEnvironment;
+  if (publicProjectId && projectId !== publicProjectId) throw new Error("Firebase Admin project ID does not match the public Firebase project ID");
+  return initializeApp({ credential: cert({ projectId, clientEmail, privateKey }), projectId });
 }
 
-export function getAdminApp(): App {
-  if (adminApp) return adminApp;
-
-  const existingApp = getApps()[0];
-  if (existingApp) {
-    adminApp = existingApp;
-    return existingApp;
-  }
-
-  const environment = readAdminEnvironment();
-  adminApp = initializeApp({
-    credential: cert(environment),
-    projectId: environment.projectId,
-  });
-  return adminApp;
-}
-
-export const getAdminAuth = () => getAuth(getAdminApp());
-export const getAdminDb = () => getFirestore(getAdminApp());
+export const adminApp = createAdminApp();
+export const adminAuth = getAuth(adminApp);
+export const adminDb = getFirestore(adminApp);
+export const adminMessaging = getMessaging(adminApp);
+export { DocumentReference, FieldValue, Timestamp };
+export type { DocumentData, Firestore, QueryDocumentSnapshot, WriteBatch };

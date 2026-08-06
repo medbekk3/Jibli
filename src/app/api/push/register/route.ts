@@ -1,6 +1,9 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
-import { FieldValue } from "firebase-admin/firestore";
-import { getAdminDb } from "@/lib/firebase/admin";
+import { FieldValue } from "@/lib/firebase/admin";
+import { adminDb } from "@/lib/firebase/admin";
 import { PushAuthError, requirePushUser } from "@/lib/firebase/push-auth";
 import { pushTokenHash } from "@/lib/firebase/push-notifications";
 
@@ -9,7 +12,7 @@ export async function POST(request: NextRequest) {
     const user = await requirePushUser(request); const body = await request.json() as Record<string, unknown>;
     const token = typeof body.token === "string" ? body.token.trim() : ""; const platform = body.platform === "web" ? "web" : "";
     if (!token || token.length > 4096 || !platform) return NextResponse.json({ success: false, error: { code: "INVALID_PUSH_TOKEN", message: "\u0631\u0645\u0632 \u0627\u0644\u0625\u0634\u0639\u0627\u0631\u0627\u062a \u063a\u064a\u0631 \u0635\u0627\u0644\u062d." } }, { status: 400 });
-    const hash = pushTokenHash(token); const database = getAdminDb(); const reference = database.collection("pushTokens").doc(hash);
+    const hash = pushTokenHash(token); const database = adminDb; const reference = database.collection("pushTokens").doc(hash);
     await database.runTransaction(async (transaction) => {
       const existing = await transaction.get(reference); const data = existing.data();
       if (existing.exists && data?.userId && data.userId !== user.uid && data.enabled === true) throw new PushAuthError(409, "\u0647\u0630\u0627 \u0627\u0644\u062c\u0647\u0627\u0632 \u0645\u0631\u062a\u0628\u0637 \u0628\u062d\u0633\u0627\u0628 \u0622\u062e\u0631. \u0633\u062c\u0651\u0644 \u0627\u0644\u062e\u0631\u0648\u062c \u0645\u0646\u0647 \u0623\u0648\u0644\u0627\u064b.");

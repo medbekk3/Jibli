@@ -1,4 +1,4 @@
-import { FieldValue } from "firebase-admin/firestore";
+import { FieldValue } from "@/lib/firebase/admin";
 
 const text = (value: unknown) => typeof value === "string" ? value.trim() : "";
 const number = (value: unknown) => Number.isFinite(Number(value)) ? Number(value) : 0;

@@ -1,6 +1,9 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { NextRequest } from "next/server";
 
-import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
+import { adminAuth, adminDb } from "@/lib/firebase/admin";
 import { apiError, apiSuccess } from "@/lib/api/response";
 import { logProductionRouteError } from "@/lib/api/production-route-log";
 
@@ -68,8 +71,8 @@ export async function POST(request: NextRequest) {
   let auth;
   let database;
   try {
-    auth = getAdminAuth();
-    database = getAdminDb();
+    auth = adminAuth;
+    database = adminDb;
   } catch (error) {
     return serverFailure("إعداد Firebase Admin", error);
   }

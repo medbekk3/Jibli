@@ -1,6 +1,6 @@
-import { FieldValue, type DocumentData, type QueryDocumentSnapshot } from "firebase-admin/firestore";
+import { FieldValue, type DocumentData, type QueryDocumentSnapshot } from "@/lib/firebase/admin";
 import { NextRequest } from "next/server";
-import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
+import { adminAuth, adminDb } from "@/lib/firebase/admin";
 
 export type NormalizedAudience = "all" | "customers" | "restaurants" | "user";
 
@@ -17,9 +17,9 @@ export async function requireNotificationUser(request: NextRequest) {
   const header = request.headers.get("authorization");
   if (!header?.startsWith("Bearer ")) throw new NotificationApiError(401, "NOTIFICATION_SESSION_REQUIRED", "انتهت جلسة تسجيل الدخول.");
   let decoded;
-  try { decoded = await getAdminAuth().verifyIdToken(header.slice(7)); }
+  try { decoded = await adminAuth.verifyIdToken(header.slice(7)); }
   catch { throw new NotificationApiError(401, "NOTIFICATION_SESSION_REQUIRED", "انتهت جلسة تسجيل الدخول."); }
-  const snapshot = await getAdminDb().collection("users").doc(decoded.uid).get();
+  const snapshot = await adminDb.collection("users").doc(decoded.uid).get();
   const profile = snapshot.data();
   if (!snapshot.exists || profile?.status !== "active" || !["customer", "restaurant"].includes(String(profile.role))) {
     throw new NotificationApiError(403, "NOTIFICATION_FORBIDDEN", "ليس لديك صلاحية عرض الإشعارات.");
@@ -35,7 +35,7 @@ export function notificationAllowed(data: DocumentData, uid: string, role: "cust
 }
 
 export async function getAllowedNotificationDocuments(uid: string, role: "customer" | "restaurant") {
-  const snapshot = await getAdminDb().collection("notifications").where("isActive", "==", true).limit(100).get();
+  const snapshot = await adminDb.collection("notifications").where("isActive", "==", true).limit(100).get();
   const missingAudience = snapshot.docs.filter((document) => !normalizeNotificationAudience(document.data().audience)).map((document) => document.id);
   if (missingAudience.length) console.warn("[الإشعارات] وثائق بجمهور ناقص أو غير معروف", { notificationIds: missingAudience });
   return snapshot.docs.filter((document) => notificationAllowed(document.data(), uid, role)).sort((a, b) => timestampMillis(b) - timestampMillis(a));
@@ -43,13 +43,13 @@ export async function getAllowedNotificationDocuments(uid: string, role: "custom
 
 export async function readNotificationIds(uid: string, documents: QueryDocumentSnapshot<DocumentData>[]) {
   if (!documents.length) return new Set<string>();
-  const refs = documents.map((document) => getAdminDb().collection("notificationReads").doc(`${document.id}_${uid}`));
-  const snapshots = await getAdminDb().getAll(...refs);
+  const refs = documents.map((document) => adminDb.collection("notificationReads").doc(`${document.id}_${uid}`));
+  const snapshots = await adminDb.getAll(...refs);
   return new Set(snapshots.filter((snapshot) => snapshot.exists).map((snapshot) => String(snapshot.data()?.notificationId ?? "")));
 }
 
 export async function markNotificationRead(notificationId: string, uid: string) {
-  await getAdminDb().collection("notificationReads").doc(`${notificationId}_${uid}`).set({ notificationId, userId: uid, readAt: FieldValue.serverTimestamp() }, { merge: true });
+  await adminDb.collection("notificationReads").doc(`${notificationId}_${uid}`).set({ notificationId, userId: uid, readAt: FieldValue.serverTimestamp() }, { merge: true });
 }
 
 function timestampMillis(document: QueryDocumentSnapshot<DocumentData>) {

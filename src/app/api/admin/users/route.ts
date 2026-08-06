@@ -1,4 +1,7 @@
-import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+import { adminAuth, adminDb } from "@/lib/firebase/admin";
 import { adminFailure, adminSuccess, logAdminApiFailure } from "@/lib/firebase/admin-response";
 import { isAdminSessionError, requireActiveAdminSession } from "@/lib/firebase/admin-session";
 import { serializeDocument } from "@/lib/firebase/serialize-firestore";
@@ -6,11 +9,11 @@ import { serializeDocument } from "@/lib/firebase/serialize-firestore";
 export async function GET() {
   try {
     await requireActiveAdminSession();
-    const dbSnapshot = await getAdminDb().collection("users").get();
+    const dbSnapshot = await adminDb.collection("users").get();
     const authUsers = new Map<string, { disabled: boolean; lastSignInTime: string | null }>();
     let pageToken: string | undefined;
     do {
-      const page = await getAdminAuth().listUsers(1000, pageToken);
+      const page = await adminAuth.listUsers(1000, pageToken);
       page.users.forEach((user) => authUsers.set(user.uid, { disabled: user.disabled, lastSignInTime: user.metadata.lastSignInTime ?? null }));
       pageToken = page.pageToken;
     } while (pageToken);

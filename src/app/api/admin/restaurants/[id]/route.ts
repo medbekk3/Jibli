@@ -1,7 +1,10 @@
-import { FieldValue } from "firebase-admin/firestore";
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+import { FieldValue } from "@/lib/firebase/admin";
 import { NextRequest } from "next/server";
 
-import { getAdminDb } from "@/lib/firebase/admin";
+import { adminDb } from "@/lib/firebase/admin";
 import { adminFailure, adminSuccess, logAdminApiFailure } from "@/lib/firebase/admin-response";
 import { addAdminActivity } from "@/lib/firebase/admin-activity";
 import { isAdminSessionError, requireActiveAdminSession } from "@/lib/firebase/admin-session";
@@ -12,7 +15,7 @@ const allowedFields = new Set(["name","description","phone","address","logoUrl",
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await requireActiveAdminSession();
-    const { id } = await params; const db = getAdminDb(); const snapshot = await db.collection("restaurants").doc(id).get();
+    const { id } = await params; const db = adminDb; const snapshot = await db.collection("restaurants").doc(id).get();
     if (!snapshot.exists) return adminFailure("INVALID_FORM_DATA", "المطعم غير موجود.", 404);
     const data = snapshot.data() ?? {}; const ownerId = typeof data.ownerId === "string" ? data.ownerId : "";
     const [owner, products] = await Promise.all([ownerId ? db.collection("users").doc(ownerId).get() : null, db.collection("products").where("restaurantId", "==", id).get()]);
@@ -30,7 +33,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const { id } = await params; const raw = await request.json() as Record<string, unknown>;
     const updates = Object.fromEntries(Object.entries(raw).filter(([key, value]) => allowedFields.has(key) && value !== undefined));
     if (!Object.keys(updates).length) return adminFailure("INVALID_FORM_DATA", "لا توجد بيانات صالحة للتحديث.", 400);
-    const db = getAdminDb(); const ref = db.collection("restaurants").doc(id); const snapshot = await ref.get();
+    const db = adminDb; const ref = db.collection("restaurants").doc(id); const snapshot = await ref.get();
     if (!snapshot.exists) return adminFailure("INVALID_FORM_DATA", "المطعم غير موجود.", 404);
     const batch = db.batch(); batch.update(ref, { ...updates, updatedAt: FieldValue.serverTimestamp() });
     const ownerId = snapshot.data()?.ownerId;

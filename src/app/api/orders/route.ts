@@ -1,6 +1,9 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
-import { FieldValue } from "firebase-admin/firestore";
-import { getAdminDb } from "@/lib/firebase/admin";
+import { FieldValue } from "@/lib/firebase/admin";
+import { adminDb } from "@/lib/firebase/admin";
 import { requireServerUser } from "@/lib/firebase/server-auth";
 import { serializeDocument } from "@/lib/firebase/serialize-firestore";
 import { logPushResult, sendPushToRestaurant } from "@/lib/firebase/push-notifications";
@@ -25,7 +28,7 @@ export async function GET(request: NextRequest) {
   const access = await requireServerUser(request, "customer");
   if (access.error) return access.error;
   try {
-    const snapshot = await getAdminDb().collection("orders").where("customerId", "==", access.uid).limit(100).get();
+    const snapshot = await adminDb.collection("orders").where("customerId", "==", access.uid).limit(100).get();
     const orders = snapshot.docs.sort((a, b) => timestampMillis(b.data().createdAt) - timestampMillis(a.data().createdAt)).map((doc) => serializeDocument(doc.id, doc.data()));
     return NextResponse.json({ success: true, data: { orders } });
   } catch (error) {
@@ -53,7 +56,7 @@ export async function POST(request: NextRequest) {
   if (!text(address.firstName, 80) || !text(address.lastName, 80) || !validPhone(address.phone) || !text(address.area, 120) || !text(address.address, 300)) return failure("INVALID_ORDER_DATA", 400, "معلومات التوصيل غير مكتملة أو رقم الهاتف غير صالح.");
 
   try {
-    const database = getAdminDb();
+    const database = adminDb;
     const restaurantSnapshot = await database.collection("restaurants").doc(restaurantId).get();
     if (!restaurantSnapshot.exists) return failure("RESTAURANT_NOT_FOUND", 404);
     const restaurant = restaurantSnapshot.data() ?? {};

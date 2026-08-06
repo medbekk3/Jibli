@@ -1,3 +1,6 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { serializeFirestoreData } from "@/lib/firebase/serialize-firestore";
 import { getAllowedNotificationDocuments, NotificationApiError, normalizeNotificationAudience, readNotificationIds, requireNotificationUser } from "@/lib/notifications/server";

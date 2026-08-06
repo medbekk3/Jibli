@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
-import { FieldValue } from "firebase-admin/firestore";
-import { getMessaging } from "firebase-admin/messaging";
-import { getAdminApp, getAdminDb } from "./admin";
+import { FieldValue } from "@/lib/firebase/admin";
+import { adminDb, adminMessaging } from "./admin";
 
 export type PushPayload = { notification: { title: string; body: string }; data: { type: string; orderId: string; orderNumber: string; url: string; status: string } };
 type TokenRecord = { id: string; token: string };
@@ -10,12 +9,12 @@ const invalidCodes = new Set(["messaging/registration-token-not-registered", "me
 export function pushTokenHash(token: string) { return createHash("sha256").update(token).digest("hex"); }
 
 export async function sendPushToUser(userId: string, payload: PushPayload) {
-  const snapshot = await getAdminDb().collection("pushTokens").where("userId", "==", userId).where("enabled", "==", true).get();
+  const snapshot = await adminDb.collection("pushTokens").where("userId", "==", userId).where("enabled", "==", true).get();
   return sendPushToTokens(snapshot.docs.map((doc) => ({ id: doc.id, token: String(doc.data().token ?? "") })).filter((item) => item.token), payload);
 }
 
 export async function sendPushToRestaurant(restaurantId: string, payload: PushPayload) {
-  const snapshot = await getAdminDb().collection("restaurants").doc(restaurantId).get();
+  const snapshot = await adminDb.collection("restaurants").doc(restaurantId).get();
   const ownerId = snapshot.data()?.ownerId;
   if (typeof ownerId !== "string" || !ownerId) return { successCount: 0, failureCount: 0, cleanedCount: 0, errorCodes: ["restaurant-owner-missing"] };
   return sendPushToUser(ownerId, payload);
@@ -26,7 +25,7 @@ export async function sendPushToTokens(records: TokenRecord[], payload: PushPayl
   for (let start = 0; start < records.length; start += 500) {
     const batch = records.slice(start, start + 500);
     try {
-      const response = await getMessaging(getAdminApp()).sendEachForMulticast({ tokens: batch.map((item) => item.token), notification: payload.notification, data: payload.data, webpush: { headers: { Urgency: "high" }, fcmOptions: { link: payload.data.url }, notification: { icon: "/images/icon-192.png", badge: "/images/icon-192.png", tag: `${payload.data.type}:${payload.data.orderId}`, renotify: true, data: { url: payload.data.url } } } });
+      const response = await adminMessaging.sendEachForMulticast({ tokens: batch.map((item) => item.token), notification: payload.notification, data: payload.data, webpush: { headers: { Urgency: "high" }, fcmOptions: { link: payload.data.url }, notification: { icon: "/images/icon-192.png", badge: "/images/icon-192.png", tag: `${payload.data.type}:${payload.data.orderId}`, renotify: true, data: { url: payload.data.url } } } });
       successCount += response.successCount; failureCount += response.failureCount;
       response.responses.forEach((item, index) => { if (!item.success) { const code = item.error?.code ?? "messaging/unknown"; errorCodes.add(code); if (invalidCodes.has(code)) invalidIds.push(batch[index].id); } });
     } catch (error) { failureCount += batch.length; errorCodes.add(error instanceof Error ? (error as Error & { code?: string }).code ?? "messaging/send-failed" : "messaging/send-failed"); }
@@ -37,7 +36,7 @@ export async function sendPushToTokens(records: TokenRecord[], payload: PushPayl
 
 export async function removeInvalidPushTokens(documentIds: string[]) {
   if (!documentIds.length) return 0;
-  const database = getAdminDb(); const batch = database.batch();
+  const database = adminDb; const batch = database.batch();
   [...new Set(documentIds)].forEach((id) => batch.set(database.collection("pushTokens").doc(id), { enabled: false, updatedAt: FieldValue.serverTimestamp(), disabledReason: "invalid-token" }, { merge: true }));
   await batch.commit(); return new Set(documentIds).size;
 }

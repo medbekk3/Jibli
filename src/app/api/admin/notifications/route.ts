@@ -1,6 +1,9 @@
-import { FieldValue } from "firebase-admin/firestore";
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+import { FieldValue } from "@/lib/firebase/admin";
 import { NextRequest } from "next/server";
-import { getAdminDb } from "@/lib/firebase/admin";
+import { adminDb } from "@/lib/firebase/admin";
 import { adminFailure, adminSuccess, logAdminApiFailure } from "@/lib/firebase/admin-response";
 import { isAdminSessionError, requireActiveAdminSession } from "@/lib/firebase/admin-session";
 
@@ -21,10 +24,10 @@ export async function POST(request: NextRequest) {
       return adminFailure("INVALID_FORM_DATA", "بيانات الإشعار غير مكتملة أو غير صحيحة.", 400);
     }
     if (targetUserId) {
-      const target = await getAdminDb().collection("users").doc(targetUserId).get();
+      const target = await adminDb.collection("users").doc(targetUserId).get();
       if (!target.exists) return adminFailure("INVALID_FORM_DATA", "المستخدم المحدد غير موجود.", 400);
     }
-    const ref = getAdminDb().collection("notifications").doc();
+    const ref = adminDb.collection("notifications").doc();
     await ref.set({ title, body, audience, targetUserId, createdBy: admin.uid, createdAt: FieldValue.serverTimestamp(), isActive: true, type, link });
     return adminSuccess({ id: ref.id, message: "تم نشر الإشعار بنجاح." }, 201);
   } catch (error) {
