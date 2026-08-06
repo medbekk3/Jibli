@@ -2,7 +2,7 @@
 
 import { Search } from "lucide-react";
 
-export function SearchBar({ placeholder = "ابحث عن مطعم أو أكلة", value, onChange }: { placeholder?: string; value?: string; onChange?: (value: string) => void }) {
+export function SearchBar({ placeholder = "ابحث عن مطعم أو أكلة...", value, onChange }: { placeholder?: string; value?: string; onChange?: (value: string) => void }) {
   return (
     <label className="flex h-13 items-center gap-3 rounded-2xl border border-gray-100 bg-white px-4 shadow-sm focus-within:border-orange-200 focus-within:ring-4 focus-within:ring-orange-50">
       <Search className="size-5 shrink-0 text-primary" />

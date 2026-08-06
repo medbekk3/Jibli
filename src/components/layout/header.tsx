@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, ChevronRight, ShoppingCart, UserRound } from "lucide-react";
+import { Bell, ChevronRight, ShoppingCart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -43,11 +43,7 @@ export function Header({ title, backHref }: { title?: string; backHref?: string 
             <ShoppingCart className="size-[1.15rem] sm:size-5" />
             {hydrated && count > 0 && <Badge count={count} />}
           </Link>
-          <Link href="/profile" aria-label={"\u0627\u0644\u062d\u0633\u0627\u0628"} className="grid size-9 place-items-center rounded-xl bg-ink text-white sm:flex sm:h-10 sm:w-auto sm:gap-2 sm:rounded-2xl sm:px-3 sm:text-xs sm:font-bold">
-            <UserRound className="size-4" />
-            <span className="hidden md:inline">&#x0627;&#x0644;&#x062D;&#x0633;&#x0627;&#x0628;</span>
-          </Link>
-        </div>
+</div>
       </PageContainer>
     </header>
   );
