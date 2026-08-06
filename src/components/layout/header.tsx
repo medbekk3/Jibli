@@ -15,7 +15,7 @@ export function Header({ title, backHref }: { title?: string; backHref?: string 
   const count = items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-line/80 bg-[#fffdf9]/90 shadow-[0_1px_0_rgba(36,26,22,.02)] backdrop-blur-xl">
+    <header className="sticky top-0 z-40 border-b border-line/80 bg-[#fffdf9]/90 pt-[env(safe-area-inset-top)] shadow-[0_1px_0_rgba(36,26,22,.02)] backdrop-blur-xl">
       <PageContainer className="flex min-h-[4.75rem] items-center justify-between gap-2 py-2 sm:gap-4">
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           {backHref && (

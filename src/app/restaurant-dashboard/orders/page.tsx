@@ -16,7 +16,7 @@ export default function RestaurantOrdersPage() {
   const { restaurant } = useRestaurantAccount(); const [orders, setOrders] = useState<OrderDocument[]>([]);
   const [tab, setTab] = useState<(typeof tabs)[number]["id"]>("new"); const [loading, setLoading] = useState(true); const [refreshing, setRefreshing] = useState(false); const [error, setError] = useState("");
   const load = useCallback(async (silent = false) => { if (silent) setRefreshing(true); else setLoading(true); try { setOrders(await getRestaurantOrders()); setError(""); } catch (caught) { setError(caught instanceof Error ? caught.message : "تعذر تحميل طلبات المطعم."); } finally { setLoading(false); setRefreshing(false); } }, []);
-  useEffect(() => { void Promise.resolve().then(() => load()); const interval = window.setInterval(() => void load(true), 10_000); return () => window.clearInterval(interval); }, [load]);
+  useEffect(() => { void Promise.resolve().then(() => load()); const refresh = () => void load(true); const interval = window.setInterval(refresh, 10_000); window.addEventListener("jibli:push", refresh); return () => { window.clearInterval(interval); window.removeEventListener("jibli:push", refresh); }; }, [load]);
   const filtered = useMemo(() => orders.filter((order) => tab === "new" ? order.status === "pending" : tab === "active" ? ["accepted", "preparing"].includes(order.status) : tab === "delivery" ? order.status === "out_for_delivery" : tab === "completed" ? order.status === "delivered" : ["rejected", "cancelled"].includes(order.status)), [orders, tab]);
   const newCount = orders.filter((order) => order.status === "pending").length;
 

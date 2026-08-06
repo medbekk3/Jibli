@@ -6,7 +6,7 @@ import { requireFirebaseApp } from "./config";
 export type PushRegistrationResult = { token: string; registration: ServiceWorkerRegistration };
 
 export function isPushSupported() {
-  return typeof window !== "undefined" && "serviceWorker" in navigator && "Notification" in window && "PushManager" in window;
+  return typeof window !== "undefined" && window.isSecureContext && "serviceWorker" in navigator && "Notification" in window && "PushManager" in window;
 }
 
 export async function requestPushPermission() {

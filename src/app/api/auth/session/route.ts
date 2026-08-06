@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 
 import { getAdminAuth, getAdminDb } from "@/lib/firebase/admin";
 import { apiError, apiSuccess } from "@/lib/api/response";
+import { logProductionRouteError } from "@/lib/api/production-route-log";
 
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 5;
 
@@ -21,34 +22,10 @@ function errorDetails(error: unknown) {
   return { code: "unknown", message: "خطأ غير معروف" };
 }
 
-function logSessionFailure(stage: FailureStage, error: unknown) {
-  const details = errorDetails(error);
-  console.error("[جلسة الإدارة] فشل إنشاء الجلسة", {
-    stage,
-    errorCode: details.code,
-    errorMessage: details.message,
-  });
+function logSessionFailure(_stage: FailureStage, error: unknown, status = 500) {
+  logProductionRouteError("POST /api/auth/session", status, error);
 }
 
-function readTokenMetadata(idToken: string) {
-  try {
-    const payload = JSON.parse(Buffer.from(idToken.split(".")[1] ?? "", "base64url").toString("utf8")) as {
-      aud?: unknown;
-      iss?: unknown;
-    };
-    return {
-      audience: typeof payload.aud === "string" ? payload.aud : "غير متاح",
-      issuer: typeof payload.iss === "string" ? payload.iss : "غير متاح",
-      expectedProjectId: process.env.FIREBASE_ADMIN_PROJECT_ID?.trim() || "غير مضبوط",
-    };
-  } catch {
-    return {
-      audience: "تعذر قراءته",
-      issuer: "تعذر قراءته",
-      expectedProjectId: process.env.FIREBASE_ADMIN_PROJECT_ID?.trim() || "غير مضبوط",
-    };
-  }
-}
 
 function tokenFailure(error: unknown) {
   const { code } = errorDetails(error);
@@ -77,7 +54,7 @@ export async function POST(request: NextRequest) {
   try {
     body = await request.json();
   } catch (error) {
-    logSessionFailure("قراءة الطلب", error);
+    logSessionFailure("قراءة الطلب", error, 400);
     return apiError("INVALID_FORM_DATA", "بيانات طلب تسجيل الدخول غير صالحة.", 400);
   }
 
@@ -101,9 +78,9 @@ export async function POST(request: NextRequest) {
   try {
     decoded = await auth.verifyIdToken(idToken, true);
   } catch (error) {
-    logSessionFailure("التحقق من رمز الدخول", error);
-    console.error("[جلسة الإدارة] بيانات آمنة عن الرمز المرفوض", readTokenMetadata(idToken));
-    return tokenFailure(error);
+    const failure = tokenFailure(error);
+    logSessionFailure("التحقق من رمز الدخول", error, failure.status);
+    return failure;
   }
 
   let profileSnapshot;
@@ -115,7 +92,7 @@ export async function POST(request: NextRequest) {
 
   const profile = profileSnapshot.data();
   if (!profileSnapshot.exists || profile?.role !== "admin" || profile?.status !== "active") {
-    logSessionFailure("التحقق من صلاحية الإدارة", new Error("الحساب ليس مديراً نشطاً."));
+    logSessionFailure("التحقق من صلاحية الإدارة", new Error("الحساب ليس مديراً نشطاً."), 403);
     return apiError("ADMIN_FORBIDDEN", "هذا الحساب لا يملك صلاحية الدخول إلى لوحة الإدارة.", 403);
   }
 

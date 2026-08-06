@@ -1,4 +1,5 @@
 import { apiError, apiSuccess } from "@/lib/api/response";
+import { logProductionRouteError } from "@/lib/api/production-route-log";
 
 export type AdminErrorCode =
   | "ADMIN_SESSION_REQUIRED"
@@ -20,9 +21,6 @@ export function adminFailure(code: AdminErrorCode, message: string, status: numb
   return apiError(code, message, status);
 }
 
-export function logAdminApiFailure(api: string, stage: string, error: unknown) {
-  const value = error instanceof Error
-    ? { code: (error as Error & { code?: string }).code ?? "unknown", message: error.message }
-    : { code: "unknown", message: "خطأ غير معروف" };
-  console.error("[واجهة الإدارة] فشل الطلب", { api, stage, errorCode: value.code, errorMessage: value.message });
+export function logAdminApiFailure(route: string, _stage: string, error: unknown, status = 500) {
+  logProductionRouteError(route, status, error);
 }

@@ -22,7 +22,7 @@ export default function RestaurantOrderDetailsPage() {
   const [duration, setDuration] = useState(30); const [reason, setReason] = useState(rejectionReasons[0]); const [customReason, setCustomReason] = useState(""); const [paymentReceived, setPaymentReceived] = useState(true);
 
   const load = useCallback(async (silent = false) => { if (!silent) setLoading(true); try { const result = await getRestaurantOrder(id); setOrder(result.order); setHistory(result.statusHistory); setError(""); } catch (caught) { setError(caught instanceof Error ? caught.message : "تعذر تحميل تفاصيل الطلب."); } finally { if (!silent) setLoading(false); } }, [id]);
-  useEffect(() => { void Promise.resolve().then(() => load()); const interval = window.setInterval(() => void load(true), 10_000); return () => window.clearInterval(interval); }, [load]);
+  useEffect(() => { void Promise.resolve().then(() => load()); const refresh = () => void load(true); const interval = window.setInterval(refresh, 10_000); window.addEventListener("jibli:push", refresh); return () => { window.clearInterval(interval); window.removeEventListener("jibli:push", refresh); }; }, [load]);
 
   async function change(nextStatus: OrderStatusCode, data: Record<string, unknown> = {}) {
     if (!order || updating) return; setUpdating(true); setError(""); setSuccess("");
