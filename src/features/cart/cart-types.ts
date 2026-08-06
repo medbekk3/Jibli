@@ -39,9 +39,10 @@ export type CartState = {
   subtotal: number; addonsTotal: number; restaurantId: string | null; restaurantName: string | null;
 };
 
-export type CheckoutFormData = { firstName: string; lastName: string; phone: string; area: string; address: string; landmark: string; customerNote: string };
+export type CheckoutFormData = { firstName: string; lastName: string; phone: string; deliveryZoneId: string; address: string; landmark: string; customerNote: string };
 export type PreparedOrderPayload = {
   restaurantId: string;
+  deliveryZoneId: string;
   items: Array<{ productId: string; quantity: number; selectedAddonIds: string[]; note: string }>;
   deliveryAddress: { firstName: string; lastName: string; phone: string; area: string; address: string; landmark: string };
   customerNote: string;

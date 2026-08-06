@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const deliveryFee = Math.max(0, toNumber(restaurant.deliveryFee));
+    const deliveryFee = 0;
     return publicSuccess({
       restaurant: {
         id: restaurantDocument.id,

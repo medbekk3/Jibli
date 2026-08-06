@@ -46,20 +46,26 @@ export async function POST(request: NextRequest) {
   catch { return failure("INVALID_ORDER_DATA", 400); }
 
   const restaurantId = text(body.restaurantId, 128);
+  const deliveryZoneId = text(body.deliveryZoneId, 128);
   const address = body.deliveryAddress && typeof body.deliveryAddress === "object" ? body.deliveryAddress as Record<string, unknown> : {};
   const rawItems = Array.isArray(body.items) ? body.items : [];
   const requested: RequestedItem[] = rawItems.map((value) => {
     const item = value && typeof value === "object" ? value as Record<string, unknown> : {};
     return { productId: text(item.productId, 128), quantity: Number(item.quantity), selectedAddonIds: Array.isArray(item.selectedAddonIds) ? [...new Set(item.selectedAddonIds.filter((id): id is string => typeof id === "string").map((id) => id.trim()).filter(Boolean))] : [], note: text(item.note, 300) };
   });
-  if (!restaurantId || !requested.length || requested.length > 50 || requested.some((item) => !item.productId || !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 99)) return failure("INVALID_ORDER_DATA", 400);
-  if (!text(address.firstName, 80) || !text(address.lastName, 80) || !validPhone(address.phone) || !text(address.area, 120) || !text(address.address, 300)) return failure("INVALID_ORDER_DATA", 400, "معلومات التوصيل غير مكتملة أو رقم الهاتف غير صالح.");
+  if (!restaurantId || !deliveryZoneId || !requested.length || requested.length > 50 || requested.some((item) => !item.productId || !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 99)) return failure("INVALID_ORDER_DATA", 400);
+  if (!text(address.firstName, 80) || !text(address.lastName, 80) || !validPhone(address.phone) || !text(address.address, 300)) return failure("INVALID_ORDER_DATA", 400, "معلومات التوصيل غير مكتملة أو رقم الهاتف غير صالح.");
 
   try {
     const database = adminDb;
-    const restaurantSnapshot = await database.collection("restaurants").doc(restaurantId).get();
+    const [restaurantSnapshot, deliveryZoneSnapshot] = await Promise.all([
+      database.collection("restaurants").doc(restaurantId).get(),
+      database.collection("deliveryZones").doc(deliveryZoneId).get(),
+    ]);
     if (!restaurantSnapshot.exists) return failure("RESTAURANT_NOT_FOUND", 404);
     const restaurant = restaurantSnapshot.data() ?? {};
+    if (!deliveryZoneSnapshot.exists || deliveryZoneSnapshot.data()?.isActive !== true) return failure("INVALID_DELIVERY_ZONE", 409, "حي التوصيل غير متاح حالياً. اختر حياً آخر.");
+    const deliveryZone = deliveryZoneSnapshot.data() ?? {};
     const settingsSnapshot = await database.collection("settings").doc("general").get();
     if (settingsSnapshot.exists && settingsSnapshot.data()?.acceptingOrders === false) return failure("ORDERING_DISABLED", 409);
 
@@ -91,8 +97,9 @@ export async function POST(request: NextRequest) {
 
     const minimumOrder = Math.max(0, numberValue(restaurant.minimumOrder));
     if (subtotal < minimumOrder) return failure("MINIMUM_ORDER_NOT_REACHED", 409, `لم تصل إلى الحد الأدنى للطلب وهو ${minimumOrder} د.ج.`);
-    const deliveryFee = Math.max(0, numberValue(restaurant.deliveryFee));
-    const total = subtotal + deliveryFee;
+    const deliveryFee = Math.max(0, numberValue(deliveryZone.deliveryFee));
+    const discount = 0;
+    const total = subtotal + deliveryFee - discount;
     const orderRef = database.collection("orders").doc();
     const orderNumber = `JBL-${dateInAlgiers()}-${orderRef.id.slice(0, 4).toUpperCase()}`;
     const now = FieldValue.serverTimestamp();
@@ -101,8 +108,8 @@ export async function POST(request: NextRequest) {
       id: orderRef.id, orderNumber, customerId: access.uid,
       customerName: `${text(address.firstName, 80)} ${text(address.lastName, 80)}`, customerPhone: text(address.phone, 30),
       restaurantId, restaurantName: text(restaurant.name, 160), restaurantPhone: text(restaurant.phone, 30), items,
-      subtotal, deliveryFee, total, paymentMethod: "cash_on_delivery", paymentStatus: "unpaid", status: "pending",
-      deliveryAddress: { firstName: text(address.firstName, 80), lastName: text(address.lastName, 80), phone: text(address.phone, 30), area: text(address.area, 120), address: text(address.address, 300), landmark: text(address.landmark, 200) },
+      subtotal, deliveryFee, discount, total, deliveryZoneId: deliveryZoneSnapshot.id, deliveryZoneName: text(deliveryZone.name, 120), paymentMethod: "cash_on_delivery", paymentStatus: "unpaid", status: "pending",
+      deliveryAddress: { firstName: text(address.firstName, 80), lastName: text(address.lastName, 80), phone: text(address.phone, 30), area: text(deliveryZone.name, 120), address: text(address.address, 300), landmark: text(address.landmark, 200) },
       customerNote: text(body.customerNote, 500), restaurantNote: "", estimatedPreparationTime: null,
       rejectionReason: "", cancellationReason: "", createdAt: now, updatedAt: now,
       acceptedAt: null, preparingAt: null, outForDeliveryAt: null, deliveredAt: null, rejectedAt: null, cancelledAt: null,

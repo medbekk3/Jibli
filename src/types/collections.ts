@@ -28,7 +28,7 @@ export interface DeliveryAddress { firstName: string; lastName: string; phone: s
 export interface OrderDocument {
   id: string; orderNumber: string; customerId: string; customerName: string; customerPhone: string;
   restaurantId: string; restaurantName: string; restaurantPhone: string; items: OrderItem[];
-  subtotal: number; deliveryFee: number; total: number; paymentMethod: "cash_on_delivery";
+  subtotal: number; deliveryFee: number; discount?: number; total: number; deliveryZoneId?: string; deliveryZoneName?: string; paymentMethod: "cash_on_delivery";
   paymentStatus: PaymentStatus; status: OrderStatusCode; deliveryAddress: DeliveryAddress;
   customerNote: string; restaurantNote: string; estimatedPreparationTime: number | null;
   rejectionReason?: string; cancellationReason?: string;

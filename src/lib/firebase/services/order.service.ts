@@ -46,6 +46,11 @@ export type OrderStatusHistory = { id: string; status: OrderStatusCode; changedB
 function hydrateOrder(order: OrderDocument) {
   const fields = ["createdAt", "updatedAt", "acceptedAt", "preparingAt", "outForDeliveryAt", "deliveredAt", "rejectedAt", "cancelledAt"] as const;
   const value = { ...order } as Record<string, unknown>;
+  const total = Number(value.total ?? 0);
+  value.deliveryFee = Number(value.deliveryFee ?? 0);
+  value.discount = Number(value.discount ?? 0);
+  value.subtotal = Number(value.subtotal ?? total);
+  value.deliveryZoneName = typeof value.deliveryZoneName === "string" && value.deliveryZoneName ? value.deliveryZoneName : "غير محدد";
   for (const field of fields) { const date = value[field]; if (typeof date === "string") value[field] = { toDate: () => new Date(date) }; }
   return value as unknown as OrderDocument;
 }

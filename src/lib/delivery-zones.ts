@@ -1,0 +1,3 @@
+export type DeliveryZone = { id: string; name: string; normalizedName: string; deliveryFee: number; isActive: boolean; sortOrder: number; createdAt?: unknown; updatedAt?: unknown; createdBy?: string };
+export function normalizeDeliveryZoneName(value: string) { return value.trim().replace(/\s+/g, " ").normalize("NFKC").toLocaleLowerCase("ar"); }
+export function validDeliveryFee(value: unknown) { const fee = Number(value); return Number.isFinite(fee) && fee >= 0 && fee <= 100000 ? fee : null; }
