@@ -36,6 +36,13 @@ export interface OrderDocument {
   outForDeliveryAt: Timestamp | null; deliveredAt: Timestamp | null; rejectedAt: Timestamp | null; cancelledAt: Timestamp | null;
 }
 export interface OfferDocument { id: string; restaurantId: string; title: string; description: string; imageUrl: string; imagePublicId: string; isActive: boolean; startsAt: Timestamp; endsAt: Timestamp; discountType?: "percentage" | "fixed"; discountValue?: number; displayOrder?: number; createdAt: Timestamp; updatedAt: Timestamp; }
+export interface DiscountCouponDocument {
+  id: string; code: string; title: string; description: string; type: "percentage" | "fixed";
+  percentage: number; fixedAmount: number; minimumOrder: number; maximumDiscount: number;
+  restaurantId: string; isGlobal: boolean; usageLimit: number; usedCount: number;
+  oneTimePerUser: boolean; allowedUsers: string[]; isActive: boolean;
+  startDate: Timestamp; endDate: Timestamp; createdAt: Timestamp; updatedAt: Timestamp;
+}
 export interface AppSettingsDocument { appName: string; logoUrl: string; supportPhone: string; welcomeText: string; acceptingOrders: boolean; platformFee: number; city: string; neighborhoods: string[]; defaultDeliveryFee: number; defaultMinimumOrder: number; updatedAt?: Timestamp; }
 
 export type CreateRestaurantInput = Omit<RestaurantDocument, "id" | "createdAt" | "updatedAt">;

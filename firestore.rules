@@ -118,6 +118,9 @@ service cloud.firestore {
       allow read: if resource.data.isActive == true || isAdmin();
       allow create, update, delete: if false;
     }
+    match /discountCoupons/{couponId} {
+      allow read, write: if false;
+    }
     match /pushTokens/{tokenId} {
       allow read, write: if false;
     }

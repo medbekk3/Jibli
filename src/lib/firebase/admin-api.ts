@@ -9,7 +9,7 @@ function reviveAdminDates(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(reviveAdminDates);
   if (!value || typeof value !== "object") return value;
   return Object.fromEntries(Object.entries(value).map(([key, item]) => {
-    if (key.endsWith("At") && typeof item === "string" && !Number.isNaN(Date.parse(item))) {
+    if ((key.endsWith("At") || key === "startDate" || key === "endDate") && typeof item === "string" && !Number.isNaN(Date.parse(item))) {
       const date = new Date(item);
       return [key, { toDate: () => date, toMillis: () => date.getTime() }];
     }

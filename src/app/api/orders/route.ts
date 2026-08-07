@@ -7,8 +7,11 @@ import { adminDb } from "@/lib/firebase/admin";
 import { requireServerUser } from "@/lib/firebase/server-auth";
 import { serializeDocument } from "@/lib/firebase/serialize-firestore";
 import { logPushResult, sendPushToRestaurant } from "@/lib/firebase/push-notifications";
+import { evaluateCoupon } from "@/lib/coupons/server";
+import { normalizeCouponCode } from "@/lib/coupons/shared";
 
 type RequestedItem = { productId: string; quantity: number; selectedAddonIds: string[]; note: string };
+class CouponOrderError extends Error { constructor(public code: string, message: string) { super(message); } }
 
 const messages: Record<string, string> = {
   RESTAURANT_NOT_FOUND: "المطعم غير موجود.", RESTAURANT_INACTIVE: "المطعم غير متاح حالياً.",
@@ -47,6 +50,7 @@ export async function POST(request: NextRequest) {
 
   const restaurantId = text(body.restaurantId, 128);
   const deliveryZoneId = text(body.deliveryZoneId, 128);
+  const couponCode = normalizeCouponCode(body.couponCode);
   const address = body.deliveryAddress && typeof body.deliveryAddress === "object" ? body.deliveryAddress as Record<string, unknown> : {};
   const rawItems = Array.isArray(body.items) ? body.items : [];
   const requested: RequestedItem[] = rawItems.map((value) => {
@@ -74,7 +78,7 @@ export async function POST(request: NextRequest) {
 
     const snapshots = await database.getAll(...[...new Set(requested.map((item) => item.productId))].map((id) => database.collection("products").doc(id)));
     const products = new Map(snapshots.filter((snapshot) => snapshot.exists).map((snapshot) => [snapshot.id, snapshot.data() ?? {}]));
-    const items = [];
+    const items: Array<{ productId: string; name: string; imageUrl: string; unitPrice: number; quantity: number; addons: Array<{ addonId: string; name: string; price: number }>; addonsTotal: number; itemTotal: number; note: string }> = [];
     let subtotal = 0;
     for (const requestedItem of requested) {
       const product = products.get(requestedItem.productId);
@@ -98,13 +102,25 @@ export async function POST(request: NextRequest) {
     const minimumOrder = Math.max(0, numberValue(restaurant.minimumOrder));
     if (subtotal < minimumOrder) return failure("MINIMUM_ORDER_NOT_REACHED", 409, `لم تصل إلى الحد الأدنى للطلب وهو ${minimumOrder} د.ج.`);
     const deliveryFee = Math.max(0, numberValue(deliveryZone.deliveryFee));
-    const discount = 0;
-    const total = subtotal + deliveryFee - discount;
     const orderRef = database.collection("orders").doc();
     const orderNumber = `JBL-${dateInAlgiers()}-${orderRef.id.slice(0, 4).toUpperCase()}`;
-    const now = FieldValue.serverTimestamp();
-    const batch = database.batch();
-    batch.set(orderRef, {
+    let discount = 0;
+    let total = subtotal + deliveryFee;
+    await database.runTransaction(async (transaction) => {
+      if (couponCode) {
+        const couponQuery = database.collection("discountCoupons").where("code", "==", couponCode).limit(1);
+        const couponSnapshot = await transaction.get(couponQuery);
+        const couponDoc = couponSnapshot.docs[0];
+        const usageSnapshot = couponDoc ? await transaction.get(couponDoc.ref.collection("usages").doc(access.uid)) : null;
+        const result = evaluateCoupon(couponDoc?.data(), couponDoc?.id ?? "", { restaurantId, subtotal, userId: access.uid, usedBefore: usageSnapshot?.exists === true });
+        if (!result.valid) throw new CouponOrderError(result.code, result.message);
+        discount = result.discount;
+        transaction.update(couponDoc!.ref, { usedCount: Math.max(0, numberValue(result.coupon.usedCount)) + 1, updatedAt: FieldValue.serverTimestamp() });
+        if (result.coupon.oneTimePerUser === true) transaction.set(couponDoc!.ref.collection("usages").doc(access.uid), { userId: access.uid, orderId: orderRef.id, code: couponCode, usedAt: FieldValue.serverTimestamp() });
+      }
+      total = Math.max(0, subtotal + deliveryFee - discount);
+      const now = FieldValue.serverTimestamp();
+      transaction.set(orderRef, {
       id: orderRef.id, orderNumber, customerId: access.uid,
       customerName: `${text(address.firstName, 80)} ${text(address.lastName, 80)}`, customerPhone: text(address.phone, 30),
       restaurantId, restaurantName: text(restaurant.name, 160), restaurantPhone: text(restaurant.phone, 30), items,
@@ -113,10 +129,10 @@ export async function POST(request: NextRequest) {
       customerNote: text(body.customerNote, 500), restaurantNote: "", estimatedPreparationTime: null,
       rejectionReason: "", cancellationReason: "", createdAt: now, updatedAt: now,
       acceptedAt: null, preparingAt: null, outForDeliveryAt: null, deliveredAt: null, rejectedAt: null, cancelledAt: null,
+      });
+      transaction.set(orderRef.collection("statusHistory").doc(), { status: "pending", changedBy: access.uid, changedByRole: "customer", note: "تم إرسال الطلب", createdAt: now });
+      if (typeof restaurant.ownerId === "string" && restaurant.ownerId) transaction.set(database.collection("notifications").doc(`new_order_${orderRef.id}`), { title: "طلب جديد 🔔", body: `وصلك طلب جديد رقم ${orderNumber} بقيمة ${total} دج.`, audience: "user", targetUserId: restaurant.ownerId, type: "order", link: `/restaurant-dashboard/orders/${orderRef.id}`, isActive: true, createdAt: now, updatedAt: now });
     });
-    batch.set(orderRef.collection("statusHistory").doc(), { status: "pending", changedBy: access.uid, changedByRole: "customer", note: "تم إرسال الطلب", createdAt: now });
-    if (typeof restaurant.ownerId === "string" && restaurant.ownerId) batch.set(database.collection("notifications").doc(`new_order_${orderRef.id}`), { title: "طلب جديد 🔔", body: `وصلك طلب جديد رقم ${orderNumber} بقيمة ${total} دج.`, audience: "user", targetUserId: restaurant.ownerId, type: "order", link: `/restaurant-dashboard/orders/${orderRef.id}`, isActive: true, createdAt: now, updatedAt: now });
-    await batch.commit();
     try {
       const pushResult = await sendPushToRestaurant(restaurantId, {
         notification: { title: "\u0637\u0644\u0628 \u062c\u062f\u064a\u062f \ud83d\udd14", body: `\u0648\u0635\u0644\u0643 \u0637\u0644\u0628 \u062c\u062f\u064a\u062f \u0631\u0642\u0645 ${orderNumber} \u0628\u0642\u064a\u0645\u0629 ${total} \u062f\u062c.` },
@@ -128,6 +144,7 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json({ success: true, data: { orderId: orderRef.id, orderNumber, status: "pending", total } }, { status: 201 });
   } catch (error) {
+    if (error instanceof CouponOrderError) return failure(error.code, 409, error.message);
     logOrderFailure("POST /api/orders", "إنشاء الطلب", error, access.uid);
     return failure("ORDER_CREATE_FAILED", 500);
   }

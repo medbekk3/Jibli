@@ -46,4 +46,5 @@ export type PreparedOrderPayload = {
   items: Array<{ productId: string; quantity: number; selectedAddonIds: string[]; note: string }>;
   deliveryAddress: { firstName: string; lastName: string; phone: string; area: string; address: string; landmark: string };
   customerNote: string;
+  couponCode?: string;
 };
