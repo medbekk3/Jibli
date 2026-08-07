@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/layout/app-shell";
 import { PageContainer } from "@/components/layout/page-container";
 import { CategoryCard } from "@/components/ui/category-card";
-import { OfferCard } from "@/components/ui/offer-card";
+import { AutoOffersSlider } from "@/components/ui/auto-offers-slider";
 import { RestaurantCard } from "@/components/ui/restaurant-card";
 import { SearchBar } from "@/components/ui/search-bar";
 import { SectionTitle } from "@/components/ui/section-title";
@@ -60,7 +60,7 @@ export default function HomePage() {
       </div>}
     </section>
     {loading ? <HomeSkeleton /> : error ? <ErrorState onRetry={retry} /> : <>
-      {data.offers.length > 0 && <section className="pb-7"><SectionTitle title="عروض اليوم" /><div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 scrollbar-none sm:mx-0 sm:px-0">{data.offers.map((offer) => <div key={offer.id} className="w-[88%] shrink-0 snap-start sm:w-[48%]"><OfferCard offer={offer} /></div>)}</div></section>}
+      {data.offers.length > 0 && <section className="pb-7"><SectionTitle title="عروض اليوم" /><AutoOffersSlider offers={data.offers} /></section>}
       {data.categories.length > 0 && <section className="pb-8"><SectionTitle title="التصنيفات" /><div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">{data.categories.slice(0, 8).map((category) => <CategoryCard key={category.id} category={category} />)}</div></section>}
       <section className="pb-8"><SectionTitle title="مطاعم مفتوحة الآن" />{openRestaurants.length ? <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{openRestaurants.map((restaurant, index) => <RestaurantCard key={restaurant.id} restaurant={restaurant} priority={index === 0} />)}</div> : <div className="rounded-2xl bg-white p-5 text-center"><Store className="mx-auto size-6 text-gray-300" /><p className="mt-2 text-sm font-bold text-muted">لا توجد مطاعم مفتوحة حالياً.</p></div>}</section>
       <section className="pb-8"><SectionTitle title="المطاعم" href="/restaurants" /><div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{data.restaurants.slice(0, 6).map((restaurant) => <RestaurantCard key={restaurant.id} restaurant={restaurant} />)}</div>{data.restaurants.length > 6 && <Link href="/restaurants" className="mt-4 flex min-h-12 items-center justify-center rounded-2xl border border-primary/20 bg-white text-sm font-black text-primary">عرض كل المطاعم</Link>}</section>

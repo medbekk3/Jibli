@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { AdminShell } from "@/components/admin/admin-shell";
-import { AdminDataTable, AdminEmptyState, AdminFilterBar, AdminLoadingSkeleton, AdminPageHeader, AdminSearchInput, StatusBadge, useAdminToast } from "@/components/admin/admin-ui";
+import { AdminEmptyState, AdminFilterBar, AdminLoadingSkeleton, AdminPageHeader, AdminSearchInput, StatusBadge, useAdminToast } from "@/components/admin/admin-ui";
 import { getAdminCustomers, type AdminCustomer, type AdminCustomerDate } from "@/lib/firebase/services/admin-customer.service";
 import { updateAdminUserStatus } from "@/lib/firebase/services/admin-user.service";
 
@@ -58,13 +58,35 @@ export default function AdminCustomersPage() {
       <span className="mr-auto text-xs text-gray-400">{visible.length} زبون</span>
     </AdminFilterBar>
     {error && <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-red-50 p-4 text-sm font-bold text-red-600"><span>{error}</span><button type="button" onClick={() => void load()} className="rounded-lg bg-red-600 px-4 py-2 text-white">إعادة المحاولة</button></div>}
-    {loading ? <AdminLoadingSkeleton /> : visible.length === 0 ? <AdminEmptyState title="لا يوجد زبائن" description={customers.length ? "لا توجد نتائج مطابقة للبحث والتصفية." : "لا توجد حسابات زبائن مسجلة حالياً."} /> : <AdminDataTable headers={["الاسم الكامل","البريد الإلكتروني","رقم الهاتف","الحالة","عدد الطلبات","إجمالي الطلبات","تاريخ التسجيل","الإجراءات"]}>
-      {visible.map((customer) => <tr key={customer.uid} className="hover:bg-gray-50">
-        <td className="p-4 font-black">{customer.fullName || "—"}</td><td className="p-4">{customer.email || "—"}</td><td className="p-4">{customer.phone || "—"}</td>
-        <td className="p-4"><StatusBadge active={customer.status === "active"} /></td><td className="p-4">{customer.ordersCount}</td><td className="p-4">{new Intl.NumberFormat("ar-DZ-u-nu-latn").format(customer.totalSpent)} د.ج</td><td className="p-4">{formatDate(customer.createdAt)}</td>
-        <td className="p-4"><div className="flex gap-2"><Link href={`/admin/customers/${customer.uid}`} aria-label="عرض التفاصيل" className="grid size-9 place-items-center rounded-lg bg-gray-100"><Eye className="size-4" /></Link><button disabled={updatingId === customer.uid} onClick={() => void toggle(customer)} className="h-9 rounded-lg bg-red-50 px-3 text-xs font-bold text-red-600 disabled:opacity-50">{updatingId === customer.uid ? "جاري التحديث..." : customer.status === "active" ? "توقيف" : "تفعيل"}</button></div></td>
+    {loading ? <AdminLoadingSkeleton /> : visible.length === 0 ? <AdminEmptyState title="لا يوجد زبائن" description={customers.length ? "لا توجد نتائج مطابقة للبحث والتصفية." : "لا توجد حسابات زبائن مسجلة حالياً."} /> : <div className="overflow-x-auto rounded-2xl border border-gray-100 bg-white">
+      <table className="min-w-[960px] w-full border-separate border-spacing-0 text-right text-sm">
+        <thead>
+          <tr>
+            {[
+              "الاسم الكامل", "البريد الإلكتروني", "رقم الهاتف", "الحالة",
+              "عدد الطلبات", "إجمالي الطلبات", "تاريخ التسجيل", "الإجراءات",
+            ].map((header) => (
+              <th
+                key={header}
+                scope="col"
+                className="sticky top-0 z-10 h-16 border-b border-gray-200 bg-gray-50 px-4 py-3 text-right align-middle text-xs font-bold text-gray-500"
+              >
+                {header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="bg-white">
+
+      {visible.map((customer) => <tr key={customer.uid} className="h-[68px] border-b border-gray-100 transition-colors hover:bg-orange-50/40">
+        <td className="h-[68px] px-4 py-3 align-middle font-black">{customer.fullName || "—"}</td><td className="h-[68px] px-4 py-3 align-middle">{customer.email || "—"}</td><td className="h-[68px] px-4 py-3 align-middle">{customer.phone || "—"}</td>
+        <td className="h-[68px] px-4 py-3 align-middle"><StatusBadge active={customer.status === "active"} /></td><td className="h-[68px] px-4 py-3 align-middle">{customer.ordersCount}</td><td className="h-[68px] px-4 py-3 align-middle">{new Intl.NumberFormat("ar-DZ-u-nu-latn").format(customer.totalSpent)} د.ج</td><td className="h-[68px] px-4 py-3 align-middle">{formatDate(customer.createdAt)}</td>
+        <td className="h-[68px] px-4 py-3 align-middle"><div className="flex items-center gap-2"><Link href={`/admin/customers/${customer.uid}`} aria-label="عرض التفاصيل" className="grid size-9 place-items-center rounded-lg bg-gray-100"><Eye className="size-4" /></Link><button disabled={updatingId === customer.uid} onClick={() => void toggle(customer)} className="h-9 rounded-lg bg-red-50 px-3 text-xs font-bold text-red-600 disabled:opacity-50">{updatingId === customer.uid ? "جاري التحديث..." : customer.status === "active" ? "توقيف" : "تفعيل"}</button></div></td>
       </tr>)}
-    </AdminDataTable>}
+
+        </tbody>
+      </table>
+    </div>}
   </AdminShell>;
 }
 

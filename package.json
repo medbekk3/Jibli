@@ -11,6 +11,8 @@
         "typecheck": "tsc --noEmit"
     },
     "dependencies": {
+        "@upstash/ratelimit": "2.0.8",
+        "@upstash/redis": "1.38.2",
         "firebase": "^12.17.0",
         "firebase-admin": "14.2.0",
         "framer-motion": "^12.43.0",
