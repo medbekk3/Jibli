@@ -1,87 +1,18 @@
 @import "tailwindcss";
 
-:root {
-  --background: #fffdf9;
-  --foreground: #201a17;
-  --primary: #ed5b18;
-  --primary-dark: #bd3c08;
-  --primary-soft: #fff0e5;
-  --surface: #f8f4ee;
-  --surface-raised: #ffffff;
-  --ink: #241a16;
-  --muted: #756b66;
-  --line: #eadfd7;
-}
-
-html {
-  scroll-behavior: smooth;
-  overflow-x: clip;
-  overscroll-behavior-x: none;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-primary: var(--primary);
-  --color-primary-dark: var(--primary-dark);
-  --color-primary-soft: var(--primary-soft);
-  --color-surface: var(--surface);
-  --color-surface-raised: var(--surface-raised);
-  --color-ink: var(--ink);
-  --color-muted: var(--muted);
-  --color-line: var(--line);
-  --font-sans: "Segoe UI", Tahoma, Arial, sans-serif;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100dvh;
-  overflow-x: clip;
-  overscroll-behavior-x: none;
-  touch-action: pan-y;
-  background: var(--background);
-  color: var(--foreground);
-  font-family: "Segoe UI", Tahoma, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-}
-
-
-::selection { background: #ffd6bc; color: var(--ink); }
-:focus-visible { outline: 3px solid color-mix(in srgb, var(--primary) 32%, transparent); outline-offset: 3px; }
-.brand-icon { background: linear-gradient(145deg, #ff7a2f 0%, var(--primary) 54%, #c83d08 100%); }
-.brand-grid { background-image: radial-gradient(circle at 1px 1px, rgba(237, 91, 24, .13) 1px, transparent 0); background-size: 22px 22px; }
-.brand-glow { background-image: radial-gradient(circle at 85% 20%, rgba(255, 183, 128, .32), transparent 34%), radial-gradient(circle at 12% 90%, rgba(237, 91, 24, .1), transparent 30%); }
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
-}
-
-button,
-input,
-textarea,
-select {
-  font: inherit;
-}
-
-
-button,
-a {
-  -webkit-tap-highlight-color: transparent;
-}
-
-button {
-  cursor: pointer;
-}
-
-.scrollbar-none {
-  scrollbar-width: none;
-}
-
-.scrollbar-none::-webkit-scrollbar {
-  display: none;
-}
+:root { --background:#f8fafc; --foreground:#061A35; --primary:#FF7A00; --primary-dark:#d95f00; --primary-soft:#fff1e5; --surface:#f8fafc; --surface-raised:#fff; --ink:#061A35; --muted:#6b7280; --line:#e8edf3; }
+html { scroll-behavior:smooth; overflow-x:clip; overscroll-behavior-x:none; }
+@theme inline { --color-background:var(--background); --color-foreground:var(--foreground); --color-primary:var(--primary); --color-primary-dark:var(--primary-dark); --color-primary-soft:var(--primary-soft); --color-surface:var(--surface); --color-surface-raised:var(--surface-raised); --color-ink:var(--ink); --color-muted:var(--muted); --color-line:var(--line); --font-sans:var(--font-alexandria),Arial,sans-serif; }
+* { box-sizing:border-box; }
+body { margin:0; min-width:320px; min-height:100dvh; overflow-x:clip; overscroll-behavior-x:none; touch-action:pan-y; background:var(--background); color:var(--foreground); font-family:var(--font-alexandria),Arial,sans-serif; -webkit-font-smoothing:antialiased; }
+::selection { background:#ffe0c2; color:var(--ink); }
+:focus-visible { outline:3px solid color-mix(in srgb,var(--primary) 34%,transparent); outline-offset:3px; }
+.brand-icon { background:linear-gradient(145deg,#ff9d42 0%,var(--primary) 58%,#e66400 100%); }
+.brand-grid { background-image:radial-gradient(circle at 1px 1px,rgba(255,122,0,.10) 1px,transparent 0); background-size:24px 24px; }
+.brand-glow { background-image:radial-gradient(circle at 88% 0%,rgba(255,157,66,.19),transparent 30%),radial-gradient(circle at 5% 100%,rgba(6,26,53,.06),transparent 35%); }
+@media (prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto !important; transition-duration:.01ms !important; animation-duration:.01ms !important; animation-iteration-count:1 !important; } }
+button,input,textarea,select { font:inherit; }
+button,a { -webkit-tap-highlight-color:transparent; }
+button { cursor:pointer; }
+.scrollbar-none { scrollbar-width:none; }
+.scrollbar-none::-webkit-scrollbar { display:none; }
