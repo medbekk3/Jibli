@@ -1,15 +1,26 @@
 import {
+  browserLocalPersistence,
   createUserWithEmailAndPassword,
   getAuth,
   sendPasswordResetEmail,
+  setPersistence,
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
 } from "firebase/auth";
 
 import { requireFirebaseApp } from "./config";
 
+let persistenceSetup: Promise<void> | null = null;
+
 export function getFirebaseAuth() {
   return getAuth(requireFirebaseApp());
+}
+
+export function initializeFirebaseAuthPersistence() {
+  if (typeof window === "undefined") return Promise.resolve();
+
+  persistenceSetup ??= setPersistence(getFirebaseAuth(), browserLocalPersistence);
+  return persistenceSetup;
 }
 
 export function createAccount(email: string, password: string) {
