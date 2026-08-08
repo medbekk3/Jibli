@@ -28,6 +28,6 @@ export function RouteGuard({ children }: { children: ReactNode }) {
     router.replace("/");
   }, [allowed, loading, pathname, profile, protectedRoute, restaurantRoot, restaurantRoute, role, router, user]);
 
-  if (loading || (protectedRoute && !allowed)) return <AuthLoading />;
+  if (protectedRoute && (loading || !allowed)) return <AuthLoading />;
   return children;
 }
